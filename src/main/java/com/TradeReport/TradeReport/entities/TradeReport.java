@@ -55,6 +55,7 @@ public class TradeReport {
         return firm;
     }
 
+    @Enumerated(EnumType.STRING)
     public TradeReportStatus getTradeReportStatus(){return tradeReportStatus;}
 
     public void setFirm(String firm) {

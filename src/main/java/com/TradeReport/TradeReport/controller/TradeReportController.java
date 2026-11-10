@@ -11,6 +11,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @RestController
 public class TradeReportController {
     @Autowired
@@ -30,4 +33,20 @@ public class TradeReportController {
 
     }
 
+    @PutMapping("/updateReportBulk")
+    public ResponseEntity<List<updateResponse>> updateReportsBulk(@Validated @RequestBody List<updateAmountAndFirm> reqs){
+
+        List<updateResponse> responses = new ArrayList<>();
+
+        for(updateAmountAndFirm report: reqs){
+            updateResponse response = tradeReportService.updateAmountAndFirm(report);
+            if (response != null) {
+                responses.add(response);
+            } else {
+                responses.add(null);
+            }
+
+        }
+        return ResponseEntity.ok(responses);
+    }
 }

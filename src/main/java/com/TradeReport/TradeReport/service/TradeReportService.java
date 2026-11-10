@@ -72,13 +72,12 @@ public class TradeReportService {
 
             tradeReport.setFirm(firm);
             tradeReport.setAmount(amount);
+            tradeReport.setStatus(TradeReportStatus.UPDATE);
 
             TradeReport updatedReport = tradeReportRepository.saveAndFlush(tradeReport);
 
-            updateResponse response = new updateResponse(updatedReport.getId(), updatedReport.getAmount(),
+        return new updateResponse(updatedReport.getId(), updatedReport.getAmount(),
                     updatedReport.getFirm(), updates.getUser(), updatedReport.getVersion());
-
-            return response;
 
     }
 
