@@ -1,13 +1,15 @@
 package com.TradeReport.TradeReport.controller;
 
 import com.TradeReport.TradeReport.DTO.createNewReport;
+import com.TradeReport.TradeReport.DTO.updateAmountAndFirm;
+import com.TradeReport.TradeReport.DTO.updateResponse;
+import com.TradeReport.TradeReport.entities.TradeReport;
 import com.TradeReport.TradeReport.service.TradeReportService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class TradeReportController {
@@ -17,6 +19,14 @@ public class TradeReportController {
     @PostMapping("/createNewReport")
     public Long createNewReport(@Validated @RequestBody createNewReport req){
         return tradeReportService.createNewReport(req);
+
+    }
+
+    @PutMapping("/updateReport")
+    public ResponseEntity<updateResponse> updateReport(@Validated @RequestBody updateAmountAndFirm req) {
+        updateResponse updatedTradeReport = tradeReportService.updateAmountAndFirm(req);
+        return ResponseEntity.ok(updatedTradeReport);
+
 
     }
 

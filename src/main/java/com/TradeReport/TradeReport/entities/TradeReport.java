@@ -39,6 +39,10 @@ public class TradeReport {
     @Version
     private Long version;
 
+    public Long getVersion() {
+        return version;
+    }
+
     public BigDecimal getAmount() {
         return amount;
     }

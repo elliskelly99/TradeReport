@@ -2,6 +2,7 @@ package com.TradeReport.TradeReport.service;
 
 import com.TradeReport.TradeReport.DTO.createNewReport;
 import com.TradeReport.TradeReport.DTO.updateAmountAndFirm;
+import com.TradeReport.TradeReport.DTO.updateResponse;
 import com.TradeReport.TradeReport.entities.TradeReport;
 import com.TradeReport.TradeReport.entities.TradeReportStatus;
 import com.TradeReport.TradeReport.entities.TradeReportsAudits;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -56,7 +58,7 @@ public class TradeReportService {
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public void updateAmountAndFirm(updateAmountAndFirm updates){
+    public updateResponse updateAmountAndFirm(updateAmountAndFirm updates){
             Long id = updates.getReportId();
             BigDecimal amount = updates.getAmount();
             String firm =  updates.getFirm();
@@ -70,6 +72,14 @@ public class TradeReportService {
 
             tradeReport.setFirm(firm);
             tradeReport.setAmount(amount);
+
+            TradeReport updatedReport = tradeReportRepository.saveAndFlush(tradeReport);
+
+            updateResponse response = new updateResponse(updatedReport.getId(), updatedReport.getAmount(),
+                    updatedReport.getFirm(), updates.getUser(), updatedReport.getVersion());
+
+            return response;
+
     }
 
 }

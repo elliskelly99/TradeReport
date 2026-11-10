@@ -1,8 +1,8 @@
 package com.TradeReport.TradeReport.DTO;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import jakarta.persistence.*;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import org.aspectj.bridge.Message;
 
 import java.math.BigDecimal;
@@ -14,9 +14,10 @@ public class createNewReport {
         this.firm = firm;
         this.user = user;
     }
-
+    @Positive(message = "Amount must be greater than 0.00" )
     private final BigDecimal amount;
     private final String firm;
+    @NotNull(message = "User must be valid")
     private final String user;
 
     public BigDecimal getAmount() {
