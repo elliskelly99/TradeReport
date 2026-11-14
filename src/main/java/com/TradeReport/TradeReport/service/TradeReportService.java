@@ -1,21 +1,21 @@
 package com.TradeReport.TradeReport.service;
 
 import com.TradeReport.TradeReport.DTO.createNewReport;
+import com.TradeReport.TradeReport.DTO.createNewReportResponse;
 import com.TradeReport.TradeReport.DTO.updateAmountAndFirm;
 import com.TradeReport.TradeReport.DTO.updateResponse;
 import com.TradeReport.TradeReport.entities.TradeReport;
 import com.TradeReport.TradeReport.entities.TradeReportStatus;
 import com.TradeReport.TradeReport.entities.TradeReportsAudits;
+import com.TradeReport.TradeReport.event.TradeReportEvent;
+import com.TradeReport.TradeReport.event.TradeReportEventPublisher;
 import com.TradeReport.TradeReport.repository.TradeReportRepository;
 import com.TradeReport.TradeReport.repository.TradeReportsAuditsRepository;
-import com.zaxxer.hikari.util.IsolationLevel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -27,17 +27,29 @@ public class TradeReportService {
     @Autowired
     TradeReportsAuditsRepository tradeReportsAuditsRepository;
 
-    public Long createNewReport(createNewReport report){
-        TradeReport mappedReport = new TradeReport(report.getAmount(), report.getFirm());
+    @Autowired
+    TradeReportEventPublisher tradeReportEventPublisher;
+
+    public createNewReportResponse createNewReport(createNewReport report){
+        TradeReport mappedReport = new TradeReport(report.amount(), report.firm());
         TradeReport savedReport = tradeReportRepository.save(mappedReport);
 
-        TradeReportsAudits tradeReportsAudits = new TradeReportsAudits(savedReport, TradeReportStatus.OPEN, report.getUser());
+        TradeReportsAudits tradeReportsAudits = new TradeReportsAudits(savedReport, TradeReportStatus.OPEN, report.user());
         tradeReportsAuditsRepository.save(tradeReportsAudits);
 
-        return savedReport.getId();
+        TradeReportEvent event = new TradeReportEvent(savedReport);
+        tradeReportEventPublisher.sendMessage(event);
+
+        return new createNewReportResponse(savedReport.getAmount(), savedReport.getFirm(), savedReport.getCreatedOn(), savedReport.getTradeReportStatus());
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+
+    /*
+        Design choice:
+            optimistic locking on report entity handles concurrency
+            Trade off: No retry
+     */
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void cancelReport(Long Id, String user){
         TradeReport tradeReport = tradeReportRepository.findById(Id).orElseThrow(
                 ()-> new RuntimeException("Cannot find report")
@@ -46,6 +58,9 @@ public class TradeReportService {
         if(tradeReport.getTradeReportStatus().equals(TradeReportStatus.OPEN)){
             TradeReportsAudits tradeReportsAudits = new TradeReportsAudits(tradeReport, TradeReportStatus.CANCEL, user);
         }
+
+        TradeReportEvent event = new TradeReportEvent(tradeReport);
+        tradeReportEventPublisher.sendMessage(event);
     }
 
     public TradeReport getReport(Long Id){
@@ -59,14 +74,14 @@ public class TradeReportService {
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public updateResponse updateAmountAndFirm(updateAmountAndFirm updates){
-            Long id = updates.getReportId();
-            BigDecimal amount = updates.getAmount();
-            String firm =  updates.getFirm();
+            Long id = updates.reportId();
+            BigDecimal amount = updates.amount();
+            String firm =  updates.firm();
 
             TradeReport tradeReport = tradeReportRepository.findById(id).orElseThrow( ()
              -> new RuntimeException(" Cannot find trade report"));
 
-            TradeReportsAudits tradeReportsAudits = new TradeReportsAudits(tradeReport, TradeReportStatus.UPDATE, updates.getUser());
+            TradeReportsAudits tradeReportsAudits = new TradeReportsAudits(tradeReport, TradeReportStatus.UPDATE, updates.user());
 
             tradeReportsAuditsRepository.save(tradeReportsAudits);
 
@@ -76,8 +91,11 @@ public class TradeReportService {
 
             TradeReport updatedReport = tradeReportRepository.saveAndFlush(tradeReport);
 
+            TradeReportEvent event = new TradeReportEvent(updatedReport);
+            tradeReportEventPublisher.sendMessage(event);
+
         return new updateResponse(updatedReport.getId(), updatedReport.getAmount(),
-                    updatedReport.getFirm(), updates.getUser(), updatedReport.getVersion());
+                    updatedReport.getFirm(), updates.user(), updatedReport.getVersion());
 
     }
 
