@@ -43,7 +43,13 @@ public class TradeReportService {
         return new createNewReportResponse(savedReport.getAmount(), savedReport.getFirm(), savedReport.getCreatedOn(), savedReport.getTradeReportStatus());
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+
+    /*
+        Design choice:
+            optimistic locking on report entity handles concurrency
+            Trade off: No retry
+     */
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void cancelReport(Long Id, String user){
         TradeReport tradeReport = tradeReportRepository.findById(Id).orElseThrow(
                 ()-> new RuntimeException("Cannot find report")

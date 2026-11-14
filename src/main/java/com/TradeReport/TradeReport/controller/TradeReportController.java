@@ -60,8 +60,6 @@ public class TradeReportController {
         return ResponseEntity.ok(responses);
     }
 
-
-
     @PostMapping("/createNewReportBulk")
     public ResponseEntity<List<createNewReportResponse>>  createNewReportBulk(@Validated @RequestBody List<createNewReport> reqs) {
         List<createNewReportResponse> responses = new ArrayList<>();

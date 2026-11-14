@@ -17,6 +17,10 @@ public class TradeReportEventPublisher {
 
     private final KafkaTemplate<Long, TradeReportEvent> kafkaTemplate;
 
+    /*
+      ENSURING WE ONLY ALLOW THE LISTENER TO WORK TILL AFTER WE HAVE MADE A
+      MESSAGE TILL AFTER THE TRANSACTION IS COMMITTED
+    */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void sendMessage(TradeReportEvent event){
         kafkaTemplate.send(KafkaTopicConfig.TRADE_REPORT_EVENTS,

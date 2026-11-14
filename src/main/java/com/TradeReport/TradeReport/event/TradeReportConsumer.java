@@ -23,6 +23,4 @@ public class TradeReportConsumer {
 
         log.info("Received event={} from partition={} at offset={}", event, partition, offset);
     }
-
-
 }
