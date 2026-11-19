@@ -8,7 +8,8 @@ import com.TradeReport.TradeReport.entities.TradeReport;
 import com.TradeReport.TradeReport.entities.TradeReportStatus;
 import com.TradeReport.TradeReport.entities.TradeReportsAudits;
 import com.TradeReport.TradeReport.event.TradeReportEvent;
-import com.TradeReport.TradeReport.event.TradeReportEventPublisher;
+import com.TradeReport.TradeReport.entities.OutboxEvent;
+import com.TradeReport.TradeReport.repository.OutboxEventRepository;
 import com.TradeReport.TradeReport.repository.TradeReportRepository;
 import com.TradeReport.TradeReport.repository.TradeReportsAuditsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,17 +29,19 @@ public class TradeReportService {
     TradeReportsAuditsRepository tradeReportsAuditsRepository;
 
     @Autowired
-    TradeReportEventPublisher tradeReportEventPublisher;
+    OutboxEventRepository outboxEventRepository;
 
+    /*
+        Audit rows are NOT written here any more. The change and its outbox row commit together;
+        the relay publishes the event and the Kafka consumer writes the audit (idempotently).
+     */
+    @Transactional
     public createNewReportResponse createNewReport(createNewReport report){
         TradeReport mappedReport = new TradeReport(report.amount(), report.firm());
-        TradeReport savedReport = tradeReportRepository.save(mappedReport);
+        TradeReport savedReport = tradeReportRepository.saveAndFlush(mappedReport);
 
-        TradeReportsAudits tradeReportsAudits = new TradeReportsAudits(savedReport, TradeReportStatus.OPEN, report.user());
-        tradeReportsAuditsRepository.save(tradeReportsAudits);
-
-        TradeReportEvent event = new TradeReportEvent(savedReport);
-        tradeReportEventPublisher.sendMessage(event);
+        outboxEventRepository.save(new OutboxEvent(
+                TradeReportEvent.of(savedReport, TradeReportStatus.OPEN, report.user())));
 
         return new createNewReportResponse(savedReport.getAmount(), savedReport.getFirm(), savedReport.getCreatedOn(), savedReport.getTradeReportStatus());
     }
@@ -59,8 +62,7 @@ public class TradeReportService {
             TradeReportsAudits tradeReportsAudits = new TradeReportsAudits(tradeReport, TradeReportStatus.CANCEL, user);
         }
 
-        TradeReportEvent event = new TradeReportEvent(tradeReport);
-        tradeReportEventPublisher.sendMessage(event);
+        // NOTE: cancelReport is still incomplete (pre-existing, out of scope): it saves nothing and is not exposed.
     }
 
     public TradeReport getReport(Long Id){
@@ -81,18 +83,14 @@ public class TradeReportService {
             TradeReport tradeReport = tradeReportRepository.findById(id).orElseThrow( ()
              -> new RuntimeException(" Cannot find trade report"));
 
-            TradeReportsAudits tradeReportsAudits = new TradeReportsAudits(tradeReport, TradeReportStatus.UPDATE, updates.user());
-
-            tradeReportsAuditsRepository.save(tradeReportsAudits);
-
             tradeReport.setFirm(firm);
             tradeReport.setAmount(amount);
             tradeReport.setStatus(TradeReportStatus.UPDATE);
 
             TradeReport updatedReport = tradeReportRepository.saveAndFlush(tradeReport);
 
-            TradeReportEvent event = new TradeReportEvent(updatedReport);
-            tradeReportEventPublisher.sendMessage(event);
+            outboxEventRepository.save(new OutboxEvent(
+                    TradeReportEvent.of(updatedReport, TradeReportStatus.UPDATE, updates.user())));
 
         return new updateResponse(updatedReport.getId(), updatedReport.getAmount(),
                     updatedReport.getFirm(), updates.user(), updatedReport.getVersion());

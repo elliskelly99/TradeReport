@@ -1,0 +1,70 @@
+package com.TradeReport.TradeReport.event;
+
+import com.TradeReport.TradeReport.DTO.createNewReport;
+import com.TradeReport.TradeReport.entities.TradeReport;
+import com.TradeReport.TradeReport.entities.TradeReportStatus;
+import com.TradeReport.TradeReport.repository.OutboxEventRepository;
+import com.TradeReport.TradeReport.repository.TradeReportRepository;
+import com.TradeReport.TradeReport.repository.TradeReportsAuditsRepository;
+import com.TradeReport.TradeReport.service.TradeReportService;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@SpringBootTest
+class TradeReportConsumerTest {
+
+    @Autowired TradeReportConsumer consumer;
+    @Autowired TradeReportRepository reportRepository;
+    @Autowired TradeReportsAuditsRepository auditsRepository;
+    @Autowired OutboxEventRepository outboxRepository;
+    @Autowired TradeReportService service;
+
+    private TradeReport newReport() {
+        return reportRepository.saveAndFlush(new TradeReport(new BigDecimal("10.00"), "firmA"));
+    }
+
+    @Test
+    void duplicateDeliveryCreatesOneAuditRow() {
+        TradeReport report = newReport();
+        TradeReportEvent event = TradeReportEvent.of(report, TradeReportStatus.OPEN, "ellis");
+
+        consumer.consume(event, 0, 1L);
+        consumer.consume(event, 0, 1L); // redelivery
+
+        assertEquals(1, auditsRepository.findByTradeReportId(report.getId()).size());
+    }
+
+    @Test
+    void distinctEventsEachGetAnAuditRow() {
+        TradeReport report = newReport();
+        consumer.consume(TradeReportEvent.of(report, TradeReportStatus.OPEN, "a"), 0, 1L);
+        consumer.consume(TradeReportEvent.of(report, TradeReportStatus.UPDATE, "b"), 0, 2L);
+
+        assertEquals(2, auditsRepository.findByTradeReportId(report.getId()).size());
+    }
+
+    @Test
+    void missingReportIsNotSwallowedAsDuplicate() {
+        TradeReportEvent event = new TradeReportEvent(UUID.randomUUID(), 999_999L, 0L,
+                new BigDecimal("1.00"), "f", Instant.now(), TradeReportStatus.OPEN, "u", Instant.now());
+        assertThrows(RuntimeException.class, () -> consumer.consume(event, 0, 1L));
+    }
+
+    @Test
+    void createReportWritesOutboxRowButNoSynchronousAudit() {
+        long outboxBefore = outboxRepository.count();
+        long auditsBefore = auditsRepository.count();
+
+        service.createNewReport(new createNewReport(new BigDecimal("5.00"), "firmB", "ellis"));
+
+        assertEquals(outboxBefore + 1, outboxRepository.count());
+        assertEquals(auditsBefore, auditsRepository.count());
+    }
+}

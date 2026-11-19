@@ -12,4 +12,6 @@ import java.util.Optional;
 public interface TradeReportsAuditsRepository extends
         JpaRepository<TradeReportsAudits, Long> {
         List <TradeReportsAudits> findByTradeReportId(Long Id);
+
+        boolean existsByEventId(java.util.UUID eventId);
     }

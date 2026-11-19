@@ -17,7 +17,7 @@ public class TradeReport {
     protected TradeReport() {}
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
@@ -30,6 +30,7 @@ public class TradeReport {
 
     private Instant updatedOn;
 
+    @Enumerated(EnumType.STRING)
     private TradeReportStatus tradeReportStatus;
 
     public Long getId() {
@@ -55,7 +56,6 @@ public class TradeReport {
         return firm;
     }
 
-    @Enumerated(EnumType.STRING)
     public TradeReportStatus getTradeReportStatus(){return tradeReportStatus;}
 
     public void setFirm(String firm) {
