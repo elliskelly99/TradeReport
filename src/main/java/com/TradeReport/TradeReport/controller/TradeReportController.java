@@ -6,6 +6,7 @@ import com.TradeReport.TradeReport.DTO.updateAmountAndFirm;
 import com.TradeReport.TradeReport.DTO.updateResponse;
 import com.TradeReport.TradeReport.entities.TradeReport;
 import com.TradeReport.TradeReport.service.TradeReportService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -16,6 +17,7 @@ import java.util.List;
 
 @RestController
 public class TradeReportController {
+
     @Autowired
     TradeReportService tradeReportService;
 
@@ -25,12 +27,12 @@ public class TradeReportController {
         return ResponseEntity.ok(tradeReport);
     }
 
-
     @GetMapping("/getReportRequestMapping")
     public ResponseEntity<TradeReport> getReportRequestMapping(@RequestParam Long id){
         TradeReport tradeReport = tradeReportService.getReport(id);
         return ResponseEntity.ok(tradeReport);
     }
+
     @PostMapping("/createNewReport")
     public createNewReportResponse createNewReport(@Validated @RequestBody createNewReport req){
         return tradeReportService.createNewReport(req);
@@ -44,7 +46,7 @@ public class TradeReportController {
     }
 
     @PutMapping("/updateReportBulk")
-    public ResponseEntity<List<updateResponse>> updateReportsBulk(@Validated @RequestBody List<updateAmountAndFirm> reqs){
+    public ResponseEntity<List<updateResponse>> updateReportsBulk(@RequestBody List<@Valid updateAmountAndFirm> reqs){
 
         List<updateResponse> responses = new ArrayList<>();
 
@@ -55,13 +57,12 @@ public class TradeReportController {
             } else {
                 responses.add(null);
             }
-
         }
         return ResponseEntity.ok(responses);
     }
 
     @PostMapping("/createNewReportBulk")
-    public ResponseEntity<List<createNewReportResponse>>  createNewReportBulk(@Validated @RequestBody List<createNewReport> reqs) {
+    public ResponseEntity<List<createNewReportResponse>>  createNewReportBulk(@RequestBody List<@Valid createNewReport> reqs) {
         List<createNewReportResponse> responses = new ArrayList<>();
 
         for (createNewReport report : reqs) {
@@ -72,5 +73,4 @@ public class TradeReportController {
         }
         return ResponseEntity.ok(responses);
     }
-
 }

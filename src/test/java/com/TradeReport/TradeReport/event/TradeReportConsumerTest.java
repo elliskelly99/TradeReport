@@ -38,7 +38,7 @@ class TradeReportConsumerTest {
         consumer.consume(event, 0, 1L);
         consumer.consume(event, 0, 1L); // redelivery
 
-        assertEquals(1, auditsRepository.findByTradeReportId(report.getId()).size());
+        assertEquals(1, auditsRepository.findByTradeReportIdOrderByReportVersionAsc(report.getId()).size());
     }
 
     @Test
@@ -47,7 +47,7 @@ class TradeReportConsumerTest {
         consumer.consume(TradeReportEvent.of(report, TradeReportStatus.OPEN, "a"), 0, 1L);
         consumer.consume(TradeReportEvent.of(report, TradeReportStatus.UPDATE, "b"), 0, 2L);
 
-        assertEquals(2, auditsRepository.findByTradeReportId(report.getId()).size());
+        assertEquals(2, auditsRepository.findByTradeReportIdOrderByReportVersionAsc(report.getId()).size());
     }
 
     @Test

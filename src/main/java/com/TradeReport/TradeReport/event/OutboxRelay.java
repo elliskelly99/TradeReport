@@ -18,8 +18,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Publishes committed outbox rows to Kafka. Safe to run on every instance:
  * FOR UPDATE SKIP LOCKED makes instances claim disjoint batches.
- * Delivery is at-least-once (a crash after send but before commit re-sends), which the
- * idempotent consumer absorbs.
+ * Delivery is at-least-once (a crash after send but before commit re-sends),
+ * which the idempotent consumer absorbs.
  */
 @Service
 @ConditionalOnProperty(name = "app.outbox.relay.enabled", havingValue = "true", matchIfMissing = true)
@@ -47,11 +47,8 @@ public class OutboxRelay {
             TradeReportEvent event = row.toEvent();
             try {
                 kafkaTemplate.send(KafkaTopicConfig.TRADE_REPORT_EVENTS, event.reportId(), event)
-                        .get(10, TimeUnit.SECONDS);
+                        .get(10, TimeUnit.SECONDS);//Wait at most 10 seconds to acknowledge that the broker received the message
                 row.markPublished();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
             } catch (Exception e) {
                 // Stop at the first failure so later events are not published ahead of this one.
                 log.error("Outbox publish failed for event {} (report {}); will retry", event.eventId(), event.reportId(), e);

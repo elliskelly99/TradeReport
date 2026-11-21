@@ -32,7 +32,7 @@ public class TradeReportService {
     OutboxEventRepository outboxEventRepository;
 
     /*
-        Audit rows are NOT written here any more. The change and its outbox row commit together;
+        The change and its outbox row commit together;
         the relay publishes the event and the Kafka consumer writes the audit (idempotently).
      */
     @Transactional
@@ -71,10 +71,15 @@ public class TradeReportService {
     }
 
     public List<TradeReportsAudits> getReportAuditHistoryByReportId(Long Id){
-        return tradeReportsAuditsRepository.findByTradeReportId(Id);
+        return tradeReportsAuditsRepository.findByTradeReportIdOrderByReportVersionAsc(Id);
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    /*
+     Design choice:
+         optimistic locking on report entity handles concurrency
+         Trade off: No retry
+  */
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public updateResponse updateAmountAndFirm(updateAmountAndFirm updates){
             Long id = updates.reportId();
             BigDecimal amount = updates.amount();

@@ -45,6 +45,8 @@ public class TradeReportConsumer {
         log.info("Received event={} from partition={} at offset={}", event.eventId(), partition, offset);
         try {
             auditService.recordAudit(event);
+            log.info("Audit COMMITTED for event={} report={} version={} (partition={} offset={})",
+                    event.eventId(), event.reportId(), event.version(), partition, offset);
         } catch (DataIntegrityViolationException e) {
             // Duplicate delivery -> already audited. Anything else (e.g. missing report FK) is a real failure.
             if (auditsRepository.existsByEventId(event.eventId())) {
