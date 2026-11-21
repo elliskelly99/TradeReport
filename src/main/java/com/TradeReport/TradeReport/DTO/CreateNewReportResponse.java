@@ -5,6 +5,6 @@ import com.TradeReport.TradeReport.entities.TradeReportStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-public record createNewReportResponse(BigDecimal amount, String firm, Instant createdOn,
+public record CreateNewReportResponse(BigDecimal amount, String firm, String tradeRefID,Instant createdOn,
                                       TradeReportStatus tradeReportStatus) {
 }

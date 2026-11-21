@@ -63,7 +63,7 @@ On startup, Flyway creates the tables and the app creates the Kafka topics.
 
 ### 3. Try it
 ```bash
-curl -X POST localhost:8080/createNewReport \
+curl -X POST localhost:8080/CreateNewReport \
   -H 'Content-Type: application/json' \
   -d '{"amount":10.50,"firm":"firmA","user":"ellis"}'
 

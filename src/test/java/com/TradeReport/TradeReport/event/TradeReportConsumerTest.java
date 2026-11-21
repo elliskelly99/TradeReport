@@ -1,6 +1,6 @@
 package com.TradeReport.TradeReport.event;
 
-import com.TradeReport.TradeReport.DTO.createNewReport;
+import com.TradeReport.TradeReport.DTO.CreateNewReport;
 import com.TradeReport.TradeReport.entities.TradeReport;
 import com.TradeReport.TradeReport.entities.TradeReportStatus;
 import com.TradeReport.TradeReport.repository.OutboxEventRepository;
@@ -62,7 +62,7 @@ class TradeReportConsumerTest {
         long outboxBefore = outboxRepository.count();
         long auditsBefore = auditsRepository.count();
 
-        service.createNewReport(new createNewReport(new BigDecimal("5.00"), "firmB", "ellis"));
+        service.createNewReport(new CreateNewReport(new BigDecimal("5.00"), "firmB", 500L,"ellis"));
 
         assertEquals(outboxBefore + 1, outboxRepository.count());
         assertEquals(auditsBefore, auditsRepository.count());

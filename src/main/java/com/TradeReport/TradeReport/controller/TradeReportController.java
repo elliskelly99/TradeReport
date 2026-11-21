@@ -1,9 +1,9 @@
 package com.TradeReport.TradeReport.controller;
 
-import com.TradeReport.TradeReport.DTO.createNewReport;
-import com.TradeReport.TradeReport.DTO.createNewReportResponse;
-import com.TradeReport.TradeReport.DTO.updateAmountAndFirm;
-import com.TradeReport.TradeReport.DTO.updateResponse;
+import com.TradeReport.TradeReport.DTO.CreateNewReport;
+import com.TradeReport.TradeReport.DTO.CreateNewReportResponse;
+import com.TradeReport.TradeReport.DTO.UpdateAmountAndFirm;
+import com.TradeReport.TradeReport.DTO.UpdateResponse;
 import com.TradeReport.TradeReport.entities.TradeReport;
 import com.TradeReport.TradeReport.service.TradeReportService;
 import jakarta.validation.Valid;
@@ -33,25 +33,25 @@ public class TradeReportController {
         return ResponseEntity.ok(tradeReport);
     }
 
-    @PostMapping("/createNewReport")
-    public createNewReportResponse createNewReport(@Validated @RequestBody createNewReport req){
+    @PostMapping("/CreateNewReport")
+    public CreateNewReportResponse createNewReport(@Validated @RequestBody CreateNewReport req){
         return tradeReportService.createNewReport(req);
 
     }
 
     @PutMapping("/updateReport")
-    public ResponseEntity<updateResponse> updateReport(@Validated @RequestBody updateAmountAndFirm req) {
-        updateResponse updatedTradeReport = tradeReportService.updateAmountAndFirm(req);
+    public ResponseEntity<UpdateResponse> updateReport(@Validated @RequestBody UpdateAmountAndFirm req) {
+        UpdateResponse updatedTradeReport = tradeReportService.updateAmountAndFirm(req);
         return ResponseEntity.ok(updatedTradeReport);
     }
 
     @PutMapping("/updateReportBulk")
-    public ResponseEntity<List<updateResponse>> updateReportsBulk(@RequestBody List<@Valid updateAmountAndFirm> reqs){
+    public ResponseEntity<List<UpdateResponse>> updateReportsBulk(@RequestBody List<@Valid UpdateAmountAndFirm> reqs){
 
-        List<updateResponse> responses = new ArrayList<>();
+        List<UpdateResponse> responses = new ArrayList<>();
 
-        for(updateAmountAndFirm report: reqs){
-            updateResponse response = tradeReportService.updateAmountAndFirm(report);
+        for(UpdateAmountAndFirm report: reqs){
+            UpdateResponse response = tradeReportService.updateAmountAndFirm(report);
             if (response != null) {
                 responses.add(response);
             } else {
@@ -62,11 +62,11 @@ public class TradeReportController {
     }
 
     @PostMapping("/createNewReportBulk")
-    public ResponseEntity<List<createNewReportResponse>>  createNewReportBulk(@RequestBody List<@Valid createNewReport> reqs) {
-        List<createNewReportResponse> responses = new ArrayList<>();
+    public ResponseEntity<List<CreateNewReportResponse>>  createNewReportBulk(@RequestBody List<@Valid CreateNewReport> reqs) {
+        List<CreateNewReportResponse> responses = new ArrayList<>();
 
-        for (createNewReport report : reqs) {
-            createNewReportResponse savedReport = tradeReportService.createNewReport(report);
+        for (CreateNewReport report : reqs) {
+            CreateNewReportResponse savedReport = tradeReportService.createNewReport(report);
             if (savedReport != null) {
                 responses.add(savedReport);
             }
