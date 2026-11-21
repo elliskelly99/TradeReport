@@ -31,7 +31,7 @@ class TradeReportServiceTest {
 
     @Test
     void getReportAuditHistoryByReportId() {
-        TradeReport tradeReport = new TradeReport(new BigDecimal("5.00"), "firmTest");
+        TradeReport tradeReport = new TradeReport(new BigDecimal("5.00"), "firmTest", "tradeRef");
 
         TradeReport savedReport = tradeReportRepository.save(tradeReport);
 

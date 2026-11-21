@@ -25,7 +25,7 @@ public class TradeReportServiceUnitTest {
 
     @Test
     public void getReportReturnTradeReport(){
-        TradeReport tradeReport = new TradeReport(new BigDecimal("5.00"), "test");
+        TradeReport tradeReport = new TradeReport(new BigDecimal("5.00"), "test", "test");
 
     when(tradeReportRepository.findById(1L)).thenReturn(Optional.of(tradeReport));
 

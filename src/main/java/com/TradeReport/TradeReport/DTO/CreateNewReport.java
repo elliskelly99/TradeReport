@@ -7,6 +7,6 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 
-public record CreateNewReport(@NotNull @Positive BigDecimal amount, @NotBlank String firm, @NotNull String tradeRefId, @NotBlank String user) {
+public record CreateNewReport(@NotNull @Positive BigDecimal amount, @NotBlank String firm, @NotBlank String tradeRefId, @NotBlank String user) {
 
 }

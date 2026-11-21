@@ -99,7 +99,7 @@ public class TradeReport {
         this.updatedOn = updatedOn;
     }
 
-    public void setTradeRefId(String tradeRefID){ this.tradeRefId = tradeRefId;}
+    public void setTradeRefId(String tradeRefId){ this.tradeRefId = tradeRefId;}
 
     public void setId(long id) {
         this.id = id;

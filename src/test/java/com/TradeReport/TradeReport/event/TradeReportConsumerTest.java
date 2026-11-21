@@ -27,7 +27,7 @@ class TradeReportConsumerTest {
     @Autowired TradeReportService service;
 
     private TradeReport newReport() {
-        return reportRepository.saveAndFlush(new TradeReport(new BigDecimal("10.00"), "firmA"));
+        return reportRepository.saveAndFlush(new TradeReport(new BigDecimal("10.00"), "firmA", "10L"));
     }
 
     @Test
@@ -62,7 +62,7 @@ class TradeReportConsumerTest {
         long outboxBefore = outboxRepository.count();
         long auditsBefore = auditsRepository.count();
 
-        service.createNewReport(new CreateNewReport(new BigDecimal("5.00"), "firmB", 500L,"ellis"));
+        service.createNewReport(new CreateNewReport(new BigDecimal("5.00"), "firmB", "tradeRef","ellis"));
 
         assertEquals(outboxBefore + 1, outboxRepository.count());
         assertEquals(auditsBefore, auditsRepository.count());
