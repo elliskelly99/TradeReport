@@ -2,7 +2,7 @@ package com.TradeReport.TradeReport.event;
 
 import com.TradeReport.TradeReport.config.KafkaTopicConfig;
 import com.TradeReport.TradeReport.entities.OutboxEvent;
-import com.TradeReport.TradeReport.repository.OutboxEventRepository;
+import com.TradeReport.TradeReport.entity.OutboxEventRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

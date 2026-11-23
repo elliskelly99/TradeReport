@@ -1,7 +1,7 @@
 package com.TradeReport.TradeReport.event;
 
 import com.TradeReport.TradeReport.config.KafkaTopicConfig;
-import com.TradeReport.TradeReport.repository.TradeReportsAuditsRepository;
+import com.TradeReport.TradeReport.entity.TradeReportsAuditsRepository;
 import com.TradeReport.TradeReport.service.TradeReportAuditService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,4 +1,4 @@
-package com.TradeReport.TradeReport.repository;
+package com.TradeReport.TradeReport.entity;
 
 
 import com.TradeReport.TradeReport.entities.TradeReport;

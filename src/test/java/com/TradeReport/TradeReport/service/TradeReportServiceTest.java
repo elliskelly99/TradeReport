@@ -3,14 +3,10 @@ package com.TradeReport.TradeReport.service;
 import com.TradeReport.TradeReport.entities.TradeReport;
 import com.TradeReport.TradeReport.entities.TradeReportStatus;
 import com.TradeReport.TradeReport.entities.TradeReportsAudits;
-import com.TradeReport.TradeReport.repository.TradeReportRepository;
-import com.TradeReport.TradeReport.repository.TradeReportsAuditsRepository;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import com.TradeReport.TradeReport.entity.TradeReportRepository;
+import com.TradeReport.TradeReport.entity.TradeReportsAuditsRepository;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;

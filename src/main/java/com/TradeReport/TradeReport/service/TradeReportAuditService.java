@@ -2,8 +2,8 @@ package com.TradeReport.TradeReport.service;
 
 import com.TradeReport.TradeReport.entities.TradeReportsAudits;
 import com.TradeReport.TradeReport.event.TradeReportEvent;
-import com.TradeReport.TradeReport.repository.TradeReportRepository;
-import com.TradeReport.TradeReport.repository.TradeReportsAuditsRepository;
+import com.TradeReport.TradeReport.entity.TradeReportRepository;
+import com.TradeReport.TradeReport.entity.TradeReportsAuditsRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
