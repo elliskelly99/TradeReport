@@ -2,14 +2,14 @@ package com.TradeReport.TradeReport.DTO;
 
 import java.math.BigDecimal;
 
-public class updateResponse {
+public class UpdateResponse {
     private final Long reportId;
     private final BigDecimal amount;
     private final String firm;
     private final String user;
     private final Long version;
 
-    public updateResponse(Long reportId, BigDecimal amount, String firm, String user, Long version) {
+    public UpdateResponse(Long reportId, BigDecimal amount, String firm, String user, Long version) {
         this.reportId = reportId;
         this.amount = amount;
         this.firm = firm;

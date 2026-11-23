@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "TradeReport (local)",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "tradereport",
+      "Username": "tradereport",
+      "SSLMode": "prefer"
+    }
+  }
+}

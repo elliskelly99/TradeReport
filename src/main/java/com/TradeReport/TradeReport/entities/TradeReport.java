@@ -7,18 +7,37 @@ import java.time.Instant;
 
 @Entity
 public class TradeReport {
-    public TradeReport(BigDecimal amount, String firm){
+    public TradeReport(BigDecimal amount, String firm, String tradeRefId){
         this.amount = amount;
         this.firm = firm;
+        this.tradeRefId = tradeRefId;
         this.createdOn = Instant.now();
         this.tradeReportStatus = TradeReportStatus.OPEN;
     }
 
     protected TradeReport() {}
 
+
+    /*
+        Idempotent feature:
+            Unique trade ref ID
+            and
+            Firm
+            to ensure retry tradeReport creations and events
+
+        Upstream trade reference. It is unique per firm,
+        so the same ref can appear once for each firm.
+        The constraint uq_trade_report_firm_ref on (firm, trade_ref_id) is defined in the Flyway migration (V2), not here.
+        Hibernate runs with ddl-auto=validate and does not create it, so change the constraint in the migration.
+
+
+     */
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false)
+    private String tradeRefId;
 
     @Column(nullable = false)
     private BigDecimal amount;
@@ -30,6 +49,7 @@ public class TradeReport {
 
     private Instant updatedOn;
 
+    @Enumerated(EnumType.STRING)
     private TradeReportStatus tradeReportStatus;
 
     public Long getId() {
@@ -38,6 +58,8 @@ public class TradeReport {
 
     @Version
     private Long version;
+
+    public String getTradeRefId(){return tradeRefId;}
 
     public Long getVersion() {
         return version;
@@ -55,7 +77,6 @@ public class TradeReport {
         return firm;
     }
 
-    @Enumerated(EnumType.STRING)
     public TradeReportStatus getTradeReportStatus(){return tradeReportStatus;}
 
     public void setFirm(String firm) {
@@ -77,6 +98,8 @@ public class TradeReport {
     public void setUpdatedOn(Instant updatedOn) {
         this.updatedOn = updatedOn;
     }
+
+    public void setTradeRefId(String tradeRefId){ this.tradeRefId = tradeRefId;}
 
     public void setId(long id) {
         this.id = id;
