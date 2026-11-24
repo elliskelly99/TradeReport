@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -46,6 +48,48 @@ public class TradeReportService {
 
         return new CreateNewReportResponse(savedReport.getAmount(), savedReport.getFirm(),savedReport.getTradeRefId(), savedReport.getCreatedOn(),
                 savedReport.getTradeReportStatus());
+    }
+
+    //DESIGN DECISION: ATOMIC BULK UPLOAD SUCCEED OR FAIL TOGETHER
+    @Transactional
+    public List<CreateNewReportResponse> createNewReportBulk(List<CreateNewReport> reports){
+       //FAIL FAST DESIGN: CHECK THAT USER HAS UNIQUE TRADE REF ID AND FIRM FROM REQUEST
+        HashSet<CreateNewReport.UniqueKey> seenKeys = new HashSet<>();
+
+        for(CreateNewReport report: reports){
+            CreateNewReport.UniqueKey key = new CreateNewReport.UniqueKey(report.firm(), report.tradeRefId());
+
+            if(!seenKeys.contains(key)){
+                seenKeys.add(key);
+            }
+            else{
+                throw new RuntimeException("Duplicate report found, ensure trade reference unique for each firm");
+            }
+        }
+
+        List<TradeReport> reportList = new ArrayList<>();
+
+        for(CreateNewReport report: reports) {
+            reportList.add(new TradeReport(report.amount(), report.firm(), report.tradeRefId()));
+        }
+
+        List<TradeReport> savedTradeReports = tradeReportRepository.saveAllAndFlush(reportList);
+
+        List<OutboxEvent> outboxEvents = new ArrayList<>(savedTradeReports.size());
+        for (int i = 0; i < savedTradeReports.size(); i++) {
+            outboxEvents.add(new OutboxEvent(
+                    TradeReportEvent.of(savedTradeReports.get(i), TradeReportStatus.OPEN, reports.get(i).user())
+            ));
+        }
+        outboxEventRepository.saveAllAndFlush(outboxEvents);
+
+        List<CreateNewReportResponse> savedReportResponses = new ArrayList<>();
+        for(TradeReport savedReport: savedTradeReports){
+            savedReportResponses.add(new CreateNewReportResponse(savedReport.getAmount(), savedReport.getFirm(), savedReport.getTradeRefId(),savedReport.getCreatedOn(),
+                savedReport.getTradeReportStatus() ));
+        }
+
+        return savedReportResponses;
     }
 
 

@@ -63,14 +63,9 @@ public class TradeReportController {
 
     @PostMapping("/createNewReportBulk")
     public ResponseEntity<List<CreateNewReportResponse>>  createNewReportBulk(@RequestBody List<@Valid CreateNewReport> reqs) {
-        List<CreateNewReportResponse> responses = new ArrayList<>();
 
-        for (CreateNewReport report : reqs) {
-            CreateNewReportResponse savedReport = tradeReportService.createNewReport(report);
-            if (savedReport != null) {
-                responses.add(savedReport);
-            }
-        }
-        return ResponseEntity.ok(responses);
+        List<CreateNewReportResponse> savedReports = tradeReportService.createNewReportBulk(reqs);
+
+        return ResponseEntity.ok(savedReports);
     }
 }
