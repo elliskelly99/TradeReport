@@ -46,7 +46,7 @@ public class TradeReportService {
         outboxEventRepository.save(new OutboxEvent(
                 TradeReportEvent.of(savedReport, TradeReportStatus.OPEN, report.user())));
 
-        return new CreateNewReportResponse(savedReport.getAmount(), savedReport.getFirm(),savedReport.getTradeRefId(), savedReport.getCreatedOn(),
+        return new CreateNewReportResponse(savedReport.getId(),savedReport.getAmount(), savedReport.getFirm(),savedReport.getTradeRefId(), savedReport.getCreatedOn(),
                 savedReport.getTradeReportStatus());
     }
 
@@ -85,10 +85,9 @@ public class TradeReportService {
 
         List<CreateNewReportResponse> savedReportResponses = new ArrayList<>();
         for(TradeReport savedReport: savedTradeReports){
-            savedReportResponses.add(new CreateNewReportResponse(savedReport.getAmount(), savedReport.getFirm(), savedReport.getTradeRefId(),savedReport.getCreatedOn(),
+            savedReportResponses.add(new CreateNewReportResponse(savedReport.getId(),savedReport.getAmount(), savedReport.getFirm(), savedReport.getTradeRefId(),savedReport.getCreatedOn(),
                 savedReport.getTradeReportStatus() ));
         }
-
         return savedReportResponses;
     }
 
@@ -108,7 +107,7 @@ public class TradeReportService {
             TradeReportsAudits tradeReportsAudits = new TradeReportsAudits(tradeReport, TradeReportStatus.CANCEL, user);
         }
 
-        // NOTE: cancelReport is still incomplete (pre-existing, out of scope): it saves nothing and is not exposed.
+        // TODO NOTE: cancelReport is still incomplete (pre-existing, out of scope): it saves nothing and is not exposed.
     }
 
     public TradeReport getReport(Long Id){

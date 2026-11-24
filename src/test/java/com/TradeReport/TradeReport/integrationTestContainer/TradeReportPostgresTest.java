@@ -1,4 +1,4 @@
-package com.TradeReport.TradeReport.integration;
+package com.TradeReport.TradeReport.integrationTestContainer;
 
 import com.TradeReport.TradeReport.entities.TradeReport;
 import com.TradeReport.TradeReport.entities.TradeReportStatus;
@@ -93,4 +93,7 @@ class TradeReportPostgresTest {
         Exception e = assertThrows(DataIntegrityViolationException.class, () -> auditService.recordAudit(tradeReportEvent));
         assert(e.getMessage().contains("violates foreign key constraint"));
     }
+
+
+
 }

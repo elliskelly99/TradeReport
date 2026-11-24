@@ -1,4 +1,4 @@
-package com.TradeReport.TradeReport.integration;
+package com.TradeReport.TradeReport.integrationTestContainer;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;

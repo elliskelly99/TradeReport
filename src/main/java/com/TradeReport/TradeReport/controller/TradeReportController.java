@@ -7,7 +7,6 @@ import com.TradeReport.TradeReport.DTO.UpdateResponse;
 import com.TradeReport.TradeReport.entities.TradeReport;
 import com.TradeReport.TradeReport.service.TradeReportService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -18,8 +17,11 @@ import java.util.List;
 @RestController
 public class TradeReportController {
 
-    @Autowired
-    TradeReportService tradeReportService;
+    private final TradeReportService tradeReportService;
+
+    TradeReportController(TradeReportService tradeReportService){
+        this.tradeReportService = tradeReportService;
+    }
 
     @GetMapping("/getReport/{id}")
     public ResponseEntity<TradeReport> getReport(@PathVariable Long id){

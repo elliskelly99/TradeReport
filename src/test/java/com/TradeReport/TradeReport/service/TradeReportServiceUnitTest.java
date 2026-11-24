@@ -1,5 +1,6 @@
 package com.TradeReport.TradeReport.service;
 
+import com.TradeReport.TradeReport.DTO.CreateNewReport;
 import com.TradeReport.TradeReport.entities.TradeReport;
 import com.TradeReport.TradeReport.entity.TradeReportRepository;
 import org.junit.jupiter.api.Test;
@@ -9,8 +10,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +36,16 @@ public class TradeReportServiceUnitTest {
 
     }
 
+    @Test
+    public void createNewReportFailDueToDuplicateTradeRefAndFirm(){
+        List<CreateNewReport> reports = List.of(
+                new CreateNewReport(BigDecimal.ONE, "EAK Investment", "test1", "ELLIS"),
+                new CreateNewReport(BigDecimal.ONE, "EAK Investment", "test1", "ELLIS"));
+
+        Exception e = assertThrows(RuntimeException.class, ()-> tradeReportService.createNewReportBulk(reports));
+
+        assert(e.getMessage().contains("Duplicate report found"));
+    }
 
 
 }

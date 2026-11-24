@@ -14,8 +14,10 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+//Intergration test
+//USES H2 DATABASE FOR SPEED
 @SpringBootTest
-class TradeReportServiceTest {
+class TradeReportServiceIntergrationTest {
     @Autowired
     TradeReportRepository tradeReportRepository;
 
@@ -45,7 +47,6 @@ class TradeReportServiceTest {
     }
 
 
-    void getReportReportHistory() {
 
-    }
+
 }
