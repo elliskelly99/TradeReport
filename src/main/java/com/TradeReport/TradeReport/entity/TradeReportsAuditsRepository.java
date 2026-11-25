@@ -9,7 +9,7 @@ import java.util.List;
 @Repository
 public interface TradeReportsAuditsRepository extends
         JpaRepository<TradeReportsAudits, Long> {
-        List <TradeReportsAudits> findByTradeReportIdOrderByReportVersionAsc(Long Id);
+        List <TradeReportsAudits> findByTradeReportIdOrderByReportVersionAsc(Long Id);//AUDITS CAN BE CONSUMED OUT OF ORDER USE THE TRADE REPORT VERSION AS THE SOURCE OF TRUTH WHEN FETCHING THE AUDITS
 
         boolean existsByEventId(java.util.UUID eventId);
     }
