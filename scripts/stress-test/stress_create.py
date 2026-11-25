@@ -28,8 +28,7 @@ LOCAL_HOSTS = ("localhost", "127.0.0.1", "::1", "host.docker.internal")
 # What each status code means for this test.
 MEANING = {
     200: "created",
-    400: "rejected by the duplicate pre-check",
-    409: "rejected by the unique constraint (a real race)",
+    409: "already exists (early check, or the unique constraint in a real race)",
 }
 
 

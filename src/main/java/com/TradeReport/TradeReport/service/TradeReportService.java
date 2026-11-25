@@ -14,6 +14,7 @@ import com.TradeReport.TradeReport.entities.TradeReportStatus;
 import com.TradeReport.TradeReport.entities.TradeReportsAudits;
 import com.TradeReport.TradeReport.event.TradeReportEvent;
 import com.TradeReport.TradeReport.exception.DuplicateTradeRefException;
+import com.TradeReport.TradeReport.exception.ReportAlreadyExistsException;
 import com.TradeReport.TradeReport.exception.ReportNotFoundException;
 import com.TradeReport.TradeReport.entities.OutboxEvent;
 import com.TradeReport.TradeReport.entity.OutboxEventRepository;
@@ -58,11 +59,13 @@ public class TradeReportService {
      */
     @Transactional
     public CreateNewReportResponse createNewReport(CreateNewReport report){
-        TradeReport mappedReport = new TradeReport(report.amount(), report.firm(), report.tradeRefId());
-
+        // STRICT CREATE: an existing (firm, tradeRefId) is refused with 409, never returned or changed.
+        // This early check gives a clear error; the unique constraint still decides a race.
         if(tradeReportRepository.existsByTradeRefIdAndFirm(report.tradeRefId(), report.firm())){
-            throw new DuplicateTradeRefException(report.firm(), report.tradeRefId());
+            throw new ReportAlreadyExistsException(report.firm(), report.tradeRefId());
         }
+
+        TradeReport mappedReport = new TradeReport(report.amount(), report.firm(), report.tradeRefId());
 
         TradeReport savedReport = tradeReportRepository.saveAndFlush(mappedReport);
 

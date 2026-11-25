@@ -41,6 +41,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problem(HttpStatus.NOT_FOUND, "Report not found", ex.getMessage());
     }
 
+    /** Create refused: this firm and trade reference already have a report. The client updates it instead. */
+    @ExceptionHandler(ReportAlreadyExistsException.class)
+    ProblemDetail handleAlreadyExists(ReportAlreadyExistsException ex) {
+        return problem(HttpStatus.CONFLICT, "Report already exists",
+                "A report with this firm and trade reference already exists. Update the existing report instead");
+    }
+
     @ExceptionHandler(DuplicateTradeRefException.class)
     ProblemDetail handleDuplicateInRequest(DuplicateTradeRefException ex) {
         return problem(HttpStatus.BAD_REQUEST, "Duplicate trade reference", ex.getMessage());

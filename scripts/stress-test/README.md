@@ -38,8 +38,7 @@ firm='STRESS TEST FIRM'  tradeRefId='STRESS-1795635083'
 total time:   1.45s  (688 requests/second)
 status codes:
   200:     1   created
-  400:   991   rejected by the duplicate pre-check
-  409:     8   rejected by the unique constraint (a real race)
+  409:   999   already exists (early check, or the unique constraint in a real race)
 latency ms:   min 11   p50 59   p95 109   p99 136   max 183
 
 verification (asking the service what it stored)
@@ -49,17 +48,14 @@ verification (asking the service what it stored)
 RESULT: PASS
 ```
 
-The 400 and 409 counts change from run to run. The one thing that must not change is **one report**.
+The 409 count is 999 on a clean run. The one thing that must not change is **one report**.
 
 ## What the status codes mean
 
 | Code | Meaning |
 |---|---|
 | 200 | The winner. It created the report. |
-| 400 | The report already existed, so the pre-check (`existsBy...`) rejected the request. |
-| 409 | A real race: the request passed the pre-check at the same moment as the winner, and the database's unique constraint (`uq_trade_report_firm_ref`) blocked the insert. |
-
-Two different answers for the same situation is a known quirk, see ADR 0003.
+| 409 | The report already exists. Most requests are refused by the early check (`existsBy...`). A few may pass it at the same moment as the winner, and the database's unique constraint (`uq_trade_report_firm_ref`) blocks their insert. Both give the same 409 (see ADR 0003). |
 
 ## Pass and fail
 
@@ -86,5 +82,5 @@ docker compose --profile ui down -v    # deletes ALL local data, then start the 
 
 ## Why it exists
 
-It shows the unique constraint protecting the data under real concurrency: a pre-check catches nearly every
-duplicate, and the constraint catches the few that slip through at the same instant.
+It shows the unique constraint protecting the data under real concurrency: an early check catches nearly every
+duplicate, and the constraint catches the few that slip through at the same instant. Both answer 409.

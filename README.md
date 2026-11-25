@@ -1,8 +1,94 @@
-# TradeReport
+<p align="center">
+  <img src="docs/images/dashboard.png" alt="TradeReport dashboard" width="900">
+</p>
 
-Spring Boot service for creating and updating trade reports. Every change produces a
-`TradeReportEvent` on Kafka, and a consumer turns each event into an **append-only audit row** in Postgres.
-Built to scale horizontally: run as many instances as you like.
+<h1 align="center">TradeReport</h1>
+<p align="center"><b>Every change. Recorded forever.</b></p>
+<p align="center">
+  A trade reporting service where nothing is lost, nothing is duplicated, and history can't be rewritten.
+</p>
+
+<br>
+
+## Designed to be trusted
+
+| | |
+|---|---|
+| **Nothing lost** <br> A change and its event are saved together, so a committed report always reaches the audit trail. | **Nothing doubled** <br> Creating the same report twice is refused. Redelivered events are absorbed. |
+| **Nothing rewritten** <br> Audit rows are append-only. The database itself rejects edits and deletes. | **Nothing overwritten** <br> Updates carry the version you saw. If someone got there first, you're told. |
+| **Built to scale** <br> Run as many instances as you like. They share the work without stepping on each other. | **Easy to see** <br> A dashboard shows every report, its history, and who changed it. |
+
+<br>
+
+## How it works
+
+```mermaid
+flowchart LR
+    A[API] --> B[(Report + Outbox<br/>one transaction)]
+    B --> C[Relay]
+    C --> D{{Kafka}}
+    D --> E[Consumer]
+    E --> F[(Audit trail<br/>append-only)]
+```
+
+You change a report. The change and its event commit together. A relay publishes the event, and a consumer
+writes one audit row for it. A repeat delivery is harmless.
+
+<br>
+
+## See it work
+
+<table>
+  <tr>
+    <td align="center" width="50%"><img src="docs/images/demo-create-report.gif" alt="Creating a report"><br><b>Create a report</b><br>It appears in the table, and its history starts with one audit row.</td>
+    <td align="center" width="50%"><img src="docs/images/demo-update-report.gif" alt="Updating a report"><br><b>Update a report</b><br>Search, select, change the amount. A new version and a new audit row.</td>
+  </tr>
+  <tr>
+    <td align="center" width="50%"><img src="docs/images/demo-failed-update.gif" alt="A conflicting update"><br><b>A conflicting update</b><br>Someone else changed it first. You get a 409 and reload the latest version.</td>
+    <td align="center" width="50%"><img src="docs/images/demo-failed-create.gif" alt="A duplicate create"><br><b>A duplicate create</b><br>The same firm and trade reference is refused, whatever the amount.</td>
+  </tr>
+</table>
+
+<br>
+
+## Get started
+
+```bash
+docker compose up -d postgres kafka
+./mvnw spring-boot:run
+```
+
+Then open the dashboard at **http://localhost:4200** (see the `TradeReportClient` folder).
+
+<br>
+
+## The details that matter
+
+- **Strict create.** One report per firm and trade reference. A repeat gets a clear 409.
+- **Versioned updates.** A stale update is rejected, never silently applied.
+- **Search, sort and paging** across every report, done in the database.
+- **Clear errors.** Consistent RFC 7807 responses. No internals leak.
+- **Real-database tests.** Postgres in Docker, with the real migrations.
+- **Stress tested.** 1,000 identical requests at once produce exactly one report.
+
+<br>
+
+## Built with
+
+Spring Boot, Java 21, PostgreSQL, Kafka, Flyway, Testcontainers, Angular, Docker.
+Pull requests were reviewed by CodeRabbit, and each finding was checked against the code before acting on it.
+
+<br>
+
+## Go deeper
+
+[Architecture decisions](docs/adr) · [Challenges faced](docs/challenges-faced.md) · [Stress test](scripts/stress-test)
+
+<sub>Honest limits: no authentication yet (a deliberate choice, see Known limitations), and audits are eventually consistent by about a second.</sub>
+
+---
+
+# Technical guide
 
 ## Architecture
 
@@ -69,7 +155,7 @@ curl -X POST localhost:8080/createNewReport \
 
 curl -X PUT localhost:8080/updateReport \
   -H 'Content-Type: application/json' \
-  -d '{"reportId":1,"amount":99.99,"user":"bob"}'
+  -d '{"reportId":1,"version":0,"amount":99.99,"user":"bob"}'
 
 curl localhost:8080/getReport/1
 curl 'localhost:8080/getReports?page=0&size=10&sort=amount&dir=DESC&firm=acme'
@@ -170,4 +256,9 @@ docker compose --profile ui down -v     # stop and DELETE all data (Postgres, pg
 
 ## Known limitations
 - `cancelReport` in `TradeReportService` is incomplete (it saves nothing and isn't exposed by the controller).
+- **Authentication and authorization are out of scope.** Anyone who can reach the API can call every endpoint,
+  and the audit `user` is whatever the client sends, so the audit records who the client *claimed* to be, not who was
+  authenticated. This was left out on purpose: the project is about the outbox, idempotent create and the append-only
+  audit, and login would be a large separate piece. To add it: put Spring Security with JWT in front of the API, take
+  `user` from the token instead of the request body, and use roles to decide who may create or update.
 - Local credentials are for development only; use real secrets and a managed Postgres/Kafka elsewhere.
