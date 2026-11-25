@@ -65,15 +65,24 @@ On startup, Flyway creates the tables and the app creates the Kafka topics.
 ```bash
 curl -X POST localhost:8080/CreateNewReport \
   -H 'Content-Type: application/json' \
-  -d '{"amount":10.50,"firm":"firmA","user":"ellis"}'
+  -d '{"amount":10.50,"firm":"firmA","tradeRefId":"REF-1","user":"ellis"}'
 
 curl -X PUT localhost:8080/updateReport \
   -H 'Content-Type: application/json' \
-  -d '{"reportId":1,"amount":99.99,"firm":"changed","user":"bob"}'
+  -d '{"reportId":1,"amount":99.99,"user":"bob"}'
 
 curl localhost:8080/getReport/1
+curl 'localhost:8080/getReports?limit=10'
+curl localhost:8080/getReportAudits/1
 ```
-A second or so later, each call has produced one row in `trade_reports_audits`.
+A second or so later, each change has produced one row in `trade_reports_audits`, which `getReportAudits` returns.
+
+`getReports` returns the newest reports first (default 50, at most 200). `getReportAudits/{id}` returns one
+report's audit history, oldest version first, or a 404 if the report does not exist.
+
+A web dashboard lives in the sibling `TradeReportClient` folder (Angular, runs in Docker on port 4200).
+Browsers only let a page call this API if the API allows the page's origin (CORS). Allowed origins come from
+`CORS_ALLOWED_ORIGINS`, default `http://localhost:4200`.
 
 ### 4. Run a second instance (scale-out demo)
 In another terminal:
@@ -126,6 +135,7 @@ Set as environment variables (defaults in `application.properties`):
 | `KAFKA_PARTITIONS` | `12` | Topic partitions (can only be increased) |
 | `KAFKA_REPLICAS` | `1` | Use 3 in a real cluster |
 | `CONSUMER_CONCURRENCY` | `3` | Consumer threads per instance |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:4200` | Browser origins allowed to call the API (comma separated) |
 
 Outbox relay: `app.outbox.relay.enabled`, `app.outbox.relay.poll-ms` (500), `app.outbox.relay.batch-size` (100).
 

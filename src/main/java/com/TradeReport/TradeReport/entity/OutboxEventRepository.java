@@ -10,7 +10,7 @@ import java.util.List;
 public interface OutboxEventRepository extends JpaRepository<OutboxEvent, Long> {
 
     /**
-     * SKIP LOCKED lets several app instances relay concurrently without
+     * SKIP LOCKED lets several app instances relay concurrently without (NOT IN SCOPE BUT INSURANCE FOR FUTURE HORITZONTAL SCALING
      * claiming the same rows.
      */
     @Query(value = "SELECT * FROM outbox_event WHERE published_at IS NULL ORDER BY id LIMIT :limit FOR UPDATE SKIP LOCKED",

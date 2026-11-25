@@ -52,7 +52,7 @@ class TradeReportConsumerTest {
 
     @Test
     void missingReportIsNotSwallowedAsDuplicate() {
-        TradeReportEvent event = new TradeReportEvent(UUID.randomUUID(), 999_999L, 0L,
+        TradeReportEvent event = new TradeReportEvent(UUID.randomUUID(), 999_999L, "trade-ref-1",0L,
                 new BigDecimal("1.00"), "f", Instant.now(), TradeReportStatus.OPEN, "u", Instant.now());
         assertThrows(RuntimeException.class, () -> consumer.consume(event, 0, 1L));
     }

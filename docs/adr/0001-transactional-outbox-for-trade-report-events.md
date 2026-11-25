@@ -132,6 +132,18 @@ These are deliberate omissions or open items. Do not assume they are bugs, and d
   `event_id`) instead, which is why duplicates are swallowed rather than failed.
 - **The consumer rethrows a constraint violation unless the `event_id` already exists.** A missing report
   (foreign key failure) is a real error and must reach the DLT, not be treated as a duplicate.
+- **The relay query uses `FOR UPDATE SKIP LOCKED` even though only one relay instance runs today.**
+  `OutboxEventRepository.claimBatch` is `SELECT ... WHERE published_at IS NULL ORDER BY id LIMIT :limit
+  FOR UPDATE SKIP LOCKED`. `FOR UPDATE` locks the claimed rows until the relay's transaction commits, and
+  `SKIP LOCKED` makes other instances skip those rows instead of waiting or sending them twice.
+  - With one instance it has no visible effect. It is insurance for horizontal scaling and is **not**
+    needed for correctness today. Do not remove it, and do not read it as a sign that several relays are
+    already running.
+  - Tradeoff: another instance gets the next *unlocked* rows, not necessarily the next ids, so events for
+    one report can be published out of order (known gap 1). The audit history is ordered by
+    `report_version` for that reason.
+  - The locks last for the whole batch, because the relay holds one transaction open while it sends
+    (see "Tradeoffs we accepted").
 - **Audit immutability is enforced by a database trigger, not only by `@Immutable`.** `@Immutable` only
   affects Hibernate and does not stop raw SQL or deletes.
 - **Audit time is the event's `occurredAt`,** not the time the consumer ran.

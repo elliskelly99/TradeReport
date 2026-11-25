@@ -26,6 +26,9 @@ public class OutboxEvent {
     @Column(name = "report_id", nullable = false)
     private Long reportId;
 
+    @Column(name = "trade_ref_id", nullable = false)
+    private String tradeRefId;
+
     @Column(name = "report_version", nullable = false)
     private Long reportVersion;
 
@@ -56,6 +59,7 @@ public class OutboxEvent {
     public OutboxEvent(TradeReportEvent e) {
         this.eventId = e.eventId();
         this.reportId = e.reportId();
+        this.tradeRefId = e.tradeRefId();
         this.reportVersion = e.version();
         this.amount = e.amount();
         this.firm = e.firm();
@@ -66,7 +70,7 @@ public class OutboxEvent {
     }
 
     public TradeReportEvent toEvent() {
-        return new TradeReportEvent(eventId, reportId, reportVersion, amount, firm,
+        return new TradeReportEvent(eventId, reportId, tradeRefId, reportVersion, amount, firm,
                 reportCreatedOn, eventType, changedBy, occurredAt);
     }
 
