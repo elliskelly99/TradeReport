@@ -36,7 +36,8 @@ public class KafkaConsumerConfig {
 
     /**
      * Retry with backoff, then park the record on trade-report-events.DLT so one bad
-     * message never blocks its partition. Deserialization failures are never retried.
+     * message never blocks its partition.
+     * Deserialization failures are never retried.
      */
     @Bean
     @SuppressWarnings({"unchecked", "rawtypes"})

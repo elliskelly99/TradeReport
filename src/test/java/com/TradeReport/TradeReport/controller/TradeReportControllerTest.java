@@ -1,6 +1,10 @@
 package com.TradeReport.TradeReport.controller;
 
 import com.TradeReport.TradeReport.DTO.CreateNewReport;
+import com.TradeReport.TradeReport.DTO.FirmTotal;
+import com.TradeReport.TradeReport.DTO.ReportPage;
+import com.TradeReport.TradeReport.DTO.ReportSortColumn;
+import com.TradeReport.TradeReport.DTO.ReportSummary;
 import com.TradeReport.TradeReport.entities.TradeReport;
 import com.TradeReport.TradeReport.entities.TradeReportStatus;
 import com.TradeReport.TradeReport.entities.TradeReportsAudits;
@@ -11,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -19,9 +24,12 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.hamcrest.Matchers.hasItem;
@@ -89,7 +97,7 @@ class TradeReportControllerTest {
         String body = """
                 {"amount":10.50,"firm":"firmA","tradeRefId":"REF-1","user":""}""";
 
-        mvc.perform(post("/CreateNewReport").contentType(MediaType.APPLICATION_JSON).content(body))
+        mvc.perform(post("/createNewReport").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Validation failed"))
                 .andExpect(jsonPath("$.errors[*]", hasItem(containsString("user"))));
@@ -106,7 +114,7 @@ class TradeReportControllerTest {
 
     @Test
     void malformedJsonReturns400() throws Exception {
-        mvc.perform(post("/CreateNewReport").contentType(MediaType.APPLICATION_JSON).content("{not json"))
+        mvc.perform(post("/createNewReport").contentType(MediaType.APPLICATION_JSON).content("{not json"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -128,7 +136,7 @@ class TradeReportControllerTest {
                 .thenThrow(new DataIntegrityViolationException(
                         "could not execute statement; constraint [uq_trade_report_firm_ref]"));
 
-        mvc.perform(post("/CreateNewReport").contentType(MediaType.APPLICATION_JSON).content(VALID))
+        mvc.perform(post("/createNewReport").contentType(MediaType.APPLICATION_JSON).content(VALID))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.title").value("Conflict"))
                 .andExpect(jsonPath("$.detail", not(containsString("uq_trade_report_firm_ref"))));
@@ -140,7 +148,7 @@ class TradeReportControllerTest {
                 .thenThrow(new ObjectOptimisticLockingFailureException(Object.class, 1L));
 
         String body = """
-                {"reportId":1,"amount":20.00,"user":"ellis"}""";
+                {"reportId":1,"version":0,"amount":20.00,"user":"ellis"}""";
 
         mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/updateReport")
                         .contentType(MediaType.APPLICATION_JSON).content(body))
@@ -161,25 +169,51 @@ class TradeReportControllerTest {
     // ---- List and audit endpoints ----
 
     @Test
-    void getReportsReturnsTheList() throws Exception {
-        when(service.getRecentReports(50))
-                .thenReturn(List.of(new TradeReport(new BigDecimal("10.00"), "firmA", "REF-1")));
+    void getReportsReturnsThePage() throws Exception {
+        TradeReport report = new TradeReport(new BigDecimal("10.00"), "firmA", "REF-1");
+        when(service.searchReports(anyInt(), anyInt(), any(), any(), anyString(), anyString(), any()))
+                .thenReturn(new ReportPage(List.of(report), 0, 50, 1, 1));
 
         mvc.perform(get("/getReports"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].firm").value("firmA"))
-                .andExpect(jsonPath("$[0].tradeRefId").value("REF-1"));
+                .andExpect(jsonPath("$.content[0].firm").value("firmA"))
+                .andExpect(jsonPath("$.content[0].tradeRefId").value("REF-1"))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1));
     }
 
     @Test
-    void getReportsPassesTheLimitToTheService() throws Exception {
-        when(service.getRecentReports(5)).thenReturn(List.of());
+    void getReportsPassesPagingSortAndFiltersToTheService() throws Exception {
+        when(service.searchReports(anyInt(), anyInt(), any(), any(), anyString(), anyString(), any()))
+                .thenReturn(new ReportPage(List.of(), 2, 5, 0, 0));
 
-        mvc.perform(get("/getReports").param("limit", "5"))
+        mvc.perform(get("/getReports")
+                        .param("page", "2").param("size", "5")
+                        .param("sort", "amount").param("dir", "ASC")
+                        .param("firm", "acme").param("tradeRefId", "ref").param("status", "OPEN"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isEmpty());
+                .andExpect(jsonPath("$.content").isEmpty());
 
-        verify(service).getRecentReports(5);
+        verify(service).searchReports(2, 5, ReportSortColumn.amount, Sort.Direction.ASC, "acme", "ref", TradeReportStatus.OPEN);
+    }
+
+    @Test
+    void getReportsRejectsAColumnThatCannotBeSorted() throws Exception {
+        mvc.perform(get("/getReports").param("sort", "tradeReportStatus"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getReportSummaryReturnsCountsAndFirmTotals() throws Exception {
+        when(service.summarize(anyString(), anyString(), any()))
+                .thenReturn(new ReportSummary(
+                        Map.of(TradeReportStatus.OPEN, 3L, TradeReportStatus.UPDATE, 1L, TradeReportStatus.CANCEL, 0L),
+                        List.of(new FirmTotal("firmA", new BigDecimal("40.00")))));
+
+        mvc.perform(get("/getReportSummary"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCounts.OPEN").value(3))
+                .andExpect(jsonPath("$.firmTotals[0].firm").value("firmA"));
     }
 
     @Test
@@ -207,7 +241,7 @@ class TradeReportControllerTest {
 
     @Test
     void preflightFromTheDashboardOriginIsAllowed() throws Exception {
-        mvc.perform(options("/CreateNewReport")
+        mvc.perform(options("/createNewReport")
                         .header("Origin", "http://localhost:4200")
                         .header("Access-Control-Request-Method", "POST")
                         .header("Access-Control-Request-Headers", "Content-Type"))
@@ -217,7 +251,7 @@ class TradeReportControllerTest {
 
     @Test
     void preflightFromAnotherOriginIsRejected() throws Exception {
-        mvc.perform(options("/CreateNewReport")
+        mvc.perform(options("/createNewReport")
                         .header("Origin", "http://evil.example")
                         .header("Access-Control-Request-Method", "POST"))
                 .andExpect(status().isForbidden());

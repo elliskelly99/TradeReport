@@ -40,7 +40,7 @@ PUT  /updateReport    ─┤   one DB transaction
 - Parallelism is capped by partition count (12 by default): at most 12 consumer threads do work at once across all instances.
 
 ## Prerequisites
-- Java 21+ (tested on 24)
+- Java 21+ (tested on 21)
 - Docker Desktop (running)
 - No separate Maven install needed; use the included `./mvnw`
 
@@ -63,7 +63,7 @@ On startup, Flyway creates the tables and the app creates the Kafka topics.
 
 ### 3. Try it
 ```bash
-curl -X POST localhost:8080/CreateNewReport \
+curl -X POST localhost:8080/createNewReport \
   -H 'Content-Type: application/json' \
   -d '{"amount":10.50,"firm":"firmA","tradeRefId":"REF-1","user":"ellis"}'
 
@@ -72,12 +72,13 @@ curl -X PUT localhost:8080/updateReport \
   -d '{"reportId":1,"amount":99.99,"user":"bob"}'
 
 curl localhost:8080/getReport/1
-curl 'localhost:8080/getReports?limit=10'
+curl 'localhost:8080/getReports?page=0&size=10&sort=amount&dir=DESC&firm=acme'
+curl localhost:8080/getReportSummary
 curl localhost:8080/getReportAudits/1
 ```
 A second or so later, each change has produced one row in `trade_reports_audits`, which `getReportAudits` returns.
 
-`getReports` returns the newest reports first (default 50, at most 200). `getReportAudits/{id}` returns one
+`getReports` returns one page (`page` from 0, `size` default 50, at most 200). `sort` is one of `id`, `tradeRefId`, `firm`, `amount`, `version`, `lastChange` and `dir` is `ASC` or `DESC` (default: newest first). `firm`, `tradeRefId` and `status` filter across all reports; text matches anywhere, ignoring case. The response has `content`, `page`, `size`, `totalElements` and `totalPages`. `getReportSummary` takes the same filters and returns the count per status and the biggest firms by total amount. `getReportAudits/{id}` returns one
 report's audit history, oldest version first, or a 404 if the report does not exist.
 
 A web dashboard lives in the sibling `TradeReportClient` folder (Angular, runs in Docker on port 4200).
@@ -143,9 +144,17 @@ Outbox relay: `app.outbox.relay.enabled`, `app.outbox.relay.poll-ms` (500), `app
 ```bash
 ./mvnw test
 ```
-Tests use in-memory H2 with Flyway and the Kafka listener disabled, so Docker isn't needed.
-They cover audit idempotency (a duplicate delivery creates one row) and that creating a report writes an
-outbox row but no synchronous audit.
+**Docker must be running** (Docker Desktop or any Docker-compatible runtime) before you run the tests.
+The database tests start a throwaway PostgreSQL container with Testcontainers, so the first run may take a
+moment to pull the `postgres:16-alpine` image. No other setup is needed. The Kafka listener and the outbox
+relay are switched off in tests, so no broker is required.
+
+- Unit and controller tests use no database, or an in-memory H2 database where Flyway is off and the schema
+  comes from the entities.
+- Database tests run against real Postgres with the Flyway migrations. They check the unique constraints and
+  the audit immutability trigger, which H2 cannot.
+- Together they cover audit idempotency (a duplicate delivery creates one row), that creating a report writes
+  an outbox row but no synchronous audit, and the controller's error handling (400, 404, 409, 500).
 
 ## Stopping and resetting
 ```bash

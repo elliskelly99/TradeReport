@@ -3,11 +3,16 @@ package com.TradeReport.TradeReport.controller;
 import com.TradeReport.TradeReport.DTO.AuditResponse;
 import com.TradeReport.TradeReport.DTO.CreateNewReport;
 import com.TradeReport.TradeReport.DTO.CreateNewReportResponse;
+import com.TradeReport.TradeReport.DTO.ReportPage;
+import com.TradeReport.TradeReport.DTO.ReportSortColumn;
+import com.TradeReport.TradeReport.DTO.ReportSummary;
 import com.TradeReport.TradeReport.DTO.UpdateAmount;
 import com.TradeReport.TradeReport.DTO.UpdateResponse;
 import com.TradeReport.TradeReport.entities.TradeReport;
+import com.TradeReport.TradeReport.entities.TradeReportStatus;
 import com.TradeReport.TradeReport.service.TradeReportService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -30,10 +35,30 @@ public class TradeReportController {
         return ResponseEntity.ok(tradeReport);
     }
 
-    /** Newest reports first. limit defaults to 50 and is capped at 200. */
+    /**
+     * One page of reports. Pages start at 0; size defaults to 50 and is capped at 200.
+     * sort is one of ReportSortColumn and dir is ASC or DESC (default: newest first).
+     * firm and tradeRefId match anywhere in the text, ignoring case; status is optional.
+     */
     @GetMapping("/getReports")
-    public ResponseEntity<List<TradeReport>> getReports(@RequestParam(defaultValue = "50") int limit){
-        return ResponseEntity.ok(tradeReportService.getRecentReports(limit));
+    public ResponseEntity<ReportPage> getReports(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(defaultValue = "id") ReportSortColumn sort,
+            @RequestParam(defaultValue = "DESC") Sort.Direction dir,
+            @RequestParam(defaultValue = "") String firm,
+            @RequestParam(defaultValue = "") String tradeRefId,
+            @RequestParam(required = false) TradeReportStatus status){
+        return ResponseEntity.ok(tradeReportService.searchReports(page, size, sort, dir, firm, tradeRefId, status));
+    }
+
+    /** Count per status and the biggest firms, over all matching reports. Same filters as getReports. */
+    @GetMapping("/getReportSummary")
+    public ResponseEntity<ReportSummary> getReportSummary(
+            @RequestParam(defaultValue = "") String firm,
+            @RequestParam(defaultValue = "") String tradeRefId,
+            @RequestParam(required = false) TradeReportStatus status){
+        return ResponseEntity.ok(tradeReportService.summarize(firm, tradeRefId, status));
     }
 
     /** Audit history of one report, oldest version first. Audit rows are written by the Kafka consumer, so a new change may take about a second to appear. */
@@ -52,7 +77,7 @@ public class TradeReportController {
         return ResponseEntity.ok(tradeReport);
     }
 
-    @PostMapping("/CreateNewReport")
+    @PostMapping("/createNewReport")
     public CreateNewReportResponse createNewReport(@Validated @RequestBody CreateNewReport req){
         return tradeReportService.createNewReport(req);
 

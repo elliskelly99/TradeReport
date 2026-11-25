@@ -1,7 +1,9 @@
 package com.TradeReport.TradeReport.service;
 
 import com.TradeReport.TradeReport.DTO.CreateNewReport;
+import com.TradeReport.TradeReport.DTO.ReportSortColumn;
 import com.TradeReport.TradeReport.entities.TradeReport;
+import com.TradeReport.TradeReport.entities.TradeReportStatus;
 import com.TradeReport.TradeReport.entity.TradeReportRepository;
 import com.TradeReport.TradeReport.exception.DuplicateTradeRefException;
 import com.TradeReport.TradeReport.exception.ReportNotFoundException;
@@ -16,12 +18,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -67,18 +72,38 @@ public class TradeReportServiceUnitTest {
     }
 
     @Test
-    public void recentReportsAreCappedAndSortedNewestFirst(){
-        when(tradeReportRepository.findAll(any(Pageable.class))).thenReturn(Page.empty());
+    public void searchCapsThePageSizeAndBreaksTiesById(){
+        when(tradeReportRepository.search(anyString(), anyString(), anyCollection(), any(Pageable.class)))
+                .thenReturn(Page.empty());
 
-        tradeReportService.getRecentReports(10_000); // far too big: capped
-        tradeReportService.getRecentReports(0);      // too small: raised to 1
+        tradeReportService.searchReports(0, 10_000, ReportSortColumn.amount, Sort.Direction.ASC, "", "", null); // too big: capped
+        tradeReportService.searchReports(0, 0, ReportSortColumn.id, Sort.Direction.DESC, "", "", null);         // too small: raised to 1
 
         ArgumentCaptor<Pageable> pages = ArgumentCaptor.forClass(Pageable.class);
-        verify(tradeReportRepository, times(2)).findAll(pages.capture());
+        verify(tradeReportRepository, times(2)).search(anyString(), anyString(), anyCollection(), pages.capture());
 
         assertEquals(200, pages.getAllValues().get(0).getPageSize());
         assertEquals(1, pages.getAllValues().get(1).getPageSize());
-        assertEquals(Sort.Direction.DESC, pages.getValue().getSort().getOrderFor("id").getDirection());
+        Sort first = pages.getAllValues().get(0).getSort();
+        assertEquals(Sort.Direction.ASC, first.getOrderFor("amount").getDirection());
+        assertEquals(Sort.Direction.ASC, first.getOrderFor("id").getDirection());
+    }
+
+    @Test
+    public void searchTextIsLowerCasedAndWildcardsAreEscaped(){
+        when(tradeReportRepository.search(anyString(), anyString(), anyCollection(), any(Pageable.class)))
+                .thenReturn(Page.empty());
+
+        tradeReportService.searchReports(0, 50, ReportSortColumn.id, Sort.Direction.DESC, " Ac_me% ", "", TradeReportStatus.OPEN);
+
+        ArgumentCaptor<String> firm = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> tradeRef = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Collection<TradeReportStatus>> statuses = ArgumentCaptor.forClass(Collection.class);
+        verify(tradeReportRepository).search(firm.capture(), tradeRef.capture(), statuses.capture(), any(Pageable.class));
+
+        assertEquals("%ac!_me!%%", firm.getValue());
+        assertEquals("%%", tradeRef.getValue());
+        assertEquals(List.of(TradeReportStatus.OPEN), List.copyOf(statuses.getValue()));
     }
 
     @Test

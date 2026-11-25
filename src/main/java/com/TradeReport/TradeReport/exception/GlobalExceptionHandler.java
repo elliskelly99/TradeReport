@@ -61,6 +61,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 "The report was changed by someone else. Re-read it and try again");
     }
 
+    @ExceptionHandler(UpdateFailDuplicateAmountExistAlreadyException.class)
+    ProblemDetail handleDuplicateAmountExistAlready(UpdateFailDuplicateAmountExistAlreadyException ex) {
+        return problem(HttpStatus.CONFLICT, "Amount the same as current",
+                "The report already exist with the requested amount");
+    }
+
     /** Single-object body that failed @Valid. */
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
