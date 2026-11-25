@@ -16,13 +16,14 @@ public class TradeReportsAudits {
 
     public TradeReportsAudits(TradeReport tradeReport, TradeReportStatus tradeReportStatus,
                               String user) {
-        this(UUID.randomUUID(), tradeReport, null, tradeReportStatus, user, Instant.now());
+        this(UUID.randomUUID(), tradeReport, tradeReport.getTradeRefId(), null, tradeReportStatus, user, Instant.now());
     }
 
-    public TradeReportsAudits(UUID eventId, TradeReport tradeReport, Long reportVersion,
+    public TradeReportsAudits(UUID eventId, TradeReport tradeReport, String tradeRefId, Long reportVersion,
                               TradeReportStatus tradeReportStatus, String user, Instant auditTime) {
         this.eventId = eventId;
         this.tradeReport = tradeReport;
+        this.tradeRefId = tradeRefId;
         this.reportVersion = reportVersion;
         this.tradeReportStatus = tradeReportStatus;
         this.user = user;
@@ -41,6 +42,10 @@ public class TradeReportsAudits {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trade_report_id")
     TradeReport tradeReport;
+
+    /** The report's trade reference at the time of the change (a snapshot, like the rest of the row). */
+    @Column(name = "trade_ref_id", nullable = false, updatable = false)
+    String tradeRefId;
 
     @Column(name = "report_version")
     Long reportVersion;
@@ -63,6 +68,10 @@ public class TradeReportsAudits {
 
     public TradeReport getTradeReport() {
         return tradeReport;
+    }
+
+    public String getTradeRefId() {
+        return tradeRefId;
     }
 
     public Long getReportVersion() {

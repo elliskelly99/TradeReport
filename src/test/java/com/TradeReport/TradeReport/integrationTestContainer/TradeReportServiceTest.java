@@ -2,9 +2,6 @@ package com.TradeReport.TradeReport.integrationTestContainer;
 
 import com.TradeReport.TradeReport.DTO.CreateNewReport;
 import com.TradeReport.TradeReport.DTO.CreateNewReportResponse;
-import com.TradeReport.TradeReport.entity.OutboxEventRepository;
-import com.TradeReport.TradeReport.entity.TradeReportRepository;
-import com.TradeReport.TradeReport.entity.TradeReportsAuditsRepository;
 import com.TradeReport.TradeReport.service.TradeReportService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -88,7 +88,7 @@ class TradeReportPostgresTest {
 
     @Test
     void auditCanNotExistWithoutExistingTradeReport(){
-        TradeReportEvent tradeReportEvent = new TradeReportEvent(UUID.randomUUID(),111L, 1L,new BigDecimal("444.00"),
+        TradeReportEvent tradeReportEvent = new TradeReportEvent(UUID.randomUUID(),111L, "trade-ref-1",1L,new BigDecimal("444.00"),
                 firm(), Instant.now(), TradeReportStatus.OPEN,"ELLIS",Instant.now());
         Exception e = assertThrows(DataIntegrityViolationException.class, () -> auditService.recordAudit(tradeReportEvent));
         assert(e.getMessage().contains("violates foreign key constraint"));

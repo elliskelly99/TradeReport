@@ -36,13 +36,13 @@ public class TradeReport {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private String tradeRefId;
 
     @Column(nullable = false)
     private BigDecimal amount;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private String firm;
 
     private Instant createdOn;
@@ -79,10 +79,6 @@ public class TradeReport {
 
     public TradeReportStatus getTradeReportStatus(){return tradeReportStatus;}
 
-    public void setFirm(String firm) {
-        this.firm = firm;
-    }
-
     public Instant getCreatedOn() {
         return createdOn;
     }
@@ -98,8 +94,6 @@ public class TradeReport {
     public void setUpdatedOn(Instant updatedOn) {
         this.updatedOn = updatedOn;
     }
-
-    public void setTradeRefId(String tradeRefId){ this.tradeRefId = tradeRefId;}
 
     public void setId(long id) {
         this.id = id;

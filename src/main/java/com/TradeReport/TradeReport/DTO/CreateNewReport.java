@@ -12,7 +12,7 @@ public record CreateNewReport(@NotNull @Positive BigDecimal amount, @NotBlank St
     public record UniqueKey(String firm, String tradeRefId){}
 
     public UniqueKey uniqueKey(){
-        return new UniqueKey(tradeRefId.trim().toLowerCase(), firm.trim().toLowerCase());
+        return new UniqueKey(firm, tradeRefId);
     }
 
 }

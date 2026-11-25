@@ -28,6 +28,7 @@ public class TradeReportAuditService {
         TradeReportsAudits audit = new TradeReportsAudits(
                 event.eventId(),
                 reportRepository.getReferenceById(event.reportId()),
+                event.tradeRefId(),
                 event.version(),
                 event.eventType(),
                 event.user(),

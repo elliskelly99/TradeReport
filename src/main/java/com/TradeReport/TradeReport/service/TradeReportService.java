@@ -2,17 +2,21 @@ package com.TradeReport.TradeReport.service;
 
 import com.TradeReport.TradeReport.DTO.CreateNewReport;
 import com.TradeReport.TradeReport.DTO.CreateNewReportResponse;
-import com.TradeReport.TradeReport.DTO.UpdateAmountAndFirm;
+import com.TradeReport.TradeReport.DTO.UpdateAmount;
 import com.TradeReport.TradeReport.DTO.UpdateResponse;
 import com.TradeReport.TradeReport.entities.TradeReport;
 import com.TradeReport.TradeReport.entities.TradeReportStatus;
 import com.TradeReport.TradeReport.entities.TradeReportsAudits;
 import com.TradeReport.TradeReport.event.TradeReportEvent;
+import com.TradeReport.TradeReport.exception.DuplicateTradeRefException;
+import com.TradeReport.TradeReport.exception.ReportNotFoundException;
 import com.TradeReport.TradeReport.entities.OutboxEvent;
 import com.TradeReport.TradeReport.entity.OutboxEventRepository;
 import com.TradeReport.TradeReport.entity.TradeReportRepository;
 import com.TradeReport.TradeReport.entity.TradeReportsAuditsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +29,8 @@ import java.util.List;
 
 @Service
 public class TradeReportService {
+    static final int MAX_LIST_SIZE = 200;
+
     @Autowired
     TradeReportRepository tradeReportRepository;
 
@@ -53,17 +59,12 @@ public class TradeReportService {
     //DESIGN DECISION: ATOMIC BULK UPLOAD SUCCEED OR FAIL TOGETHER
     @Transactional
     public List<CreateNewReportResponse> createNewReportBulk(List<CreateNewReport> reports){
-       //FAIL FAST DESIGN: CHECK THAT USER HAS UNIQUE TRADE REF ID AND FIRM FROM REQUEST
+       //FAIL FAST DESIGN: CHECK THAT USER REQUEST HAS UNIQUE TRADE REF ID AND FIRM FROM REQUEST
         HashSet<CreateNewReport.UniqueKey> seenKeys = new HashSet<>();
-
+    
         for(CreateNewReport report: reports){
-            CreateNewReport.UniqueKey key = new CreateNewReport.UniqueKey(report.firm(), report.tradeRefId());
-
-            if(!seenKeys.contains(key)){
-                seenKeys.add(key);
-            }
-            else{
-                throw new RuntimeException("Duplicate report found, ensure trade reference unique for each firm");
+            if (!seenKeys.add(report.uniqueKey())) {
+                throw new DuplicateTradeRefException(report.firm(), report.tradeRefId());
             }
         }
 
@@ -100,7 +101,7 @@ public class TradeReportService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void cancelReport(Long Id, String user){
         TradeReport tradeReport = tradeReportRepository.findById(Id).orElseThrow(
-                ()-> new RuntimeException("Cannot find report")
+                () -> new ReportNotFoundException(Id)
         );
 
         if(tradeReport.getTradeReportStatus().equals(TradeReportStatus.OPEN)){
@@ -111,12 +112,22 @@ public class TradeReportService {
     }
 
     public TradeReport getReport(Long Id){
-        return tradeReportRepository.findById(Id).orElseThrow( ()->
-                new RuntimeException("Can not find report"));
+        return tradeReportRepository.findById(Id).orElseThrow(
+                () -> new ReportNotFoundException(Id));
     }
 
+    /** Audit rows for one report, oldest version first. 404 if the report does not exist. */
     public List<TradeReportsAudits> getReportAuditHistoryByReportId(Long Id){
+        if (!tradeReportRepository.existsById(Id)) {
+            throw new ReportNotFoundException(Id);
+        }
         return tradeReportsAuditsRepository.findByTradeReportIdOrderByReportVersionAsc(Id);
+    }
+
+    /** The newest reports first. The limit is kept between 1 and MAX_LIST_SIZE so one call cannot return the whole table. */
+    public List<TradeReport> getRecentReports(int limit){
+        int size = Math.max(1, Math.min(limit, MAX_LIST_SIZE));
+        return tradeReportRepository.findAll(PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "id"))).getContent();
     }
 
     /*
@@ -125,15 +136,13 @@ public class TradeReportService {
          Trade off: No retry
   */
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public UpdateResponse updateAmountAndFirm(UpdateAmountAndFirm updates){
+    public UpdateResponse updateAmount(UpdateAmount updates){
             Long id = updates.reportId();
             BigDecimal amount = updates.amount();
-            String firm =  updates.firm();
 
-            TradeReport tradeReport = tradeReportRepository.findById(id).orElseThrow( ()
-             -> new RuntimeException(" Cannot find trade report"));
+            TradeReport tradeReport = tradeReportRepository.findById(id).orElseThrow(
+                    () -> new ReportNotFoundException(id));
 
-            tradeReport.setFirm(firm);
             tradeReport.setAmount(amount);
             tradeReport.setUpdatedOn(Instant.now());
             tradeReport.setStatus(TradeReportStatus.UPDATE);
@@ -143,8 +152,8 @@ public class TradeReportService {
             outboxEventRepository.save(new OutboxEvent(
                     TradeReportEvent.of(updatedReport, TradeReportStatus.UPDATE, updates.user())));
 
-        return new UpdateResponse(updatedReport.getId(), updatedReport.getAmount(),
-                    updatedReport.getFirm(), updates.user(), updatedReport.getVersion());
+        return new UpdateResponse(updatedReport.getId(), updatedReport.getTradeRefId(), updatedReport.getFirm(),
+                    updatedReport.getAmount(), updates.user(), updatedReport.getVersion());
 
     }
 

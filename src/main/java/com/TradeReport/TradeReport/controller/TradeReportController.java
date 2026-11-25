@@ -1,8 +1,9 @@
 package com.TradeReport.TradeReport.controller;
 
+import com.TradeReport.TradeReport.DTO.AuditResponse;
 import com.TradeReport.TradeReport.DTO.CreateNewReport;
 import com.TradeReport.TradeReport.DTO.CreateNewReportResponse;
-import com.TradeReport.TradeReport.DTO.UpdateAmountAndFirm;
+import com.TradeReport.TradeReport.DTO.UpdateAmount;
 import com.TradeReport.TradeReport.DTO.UpdateResponse;
 import com.TradeReport.TradeReport.entities.TradeReport;
 import com.TradeReport.TradeReport.service.TradeReportService;
@@ -29,6 +30,22 @@ public class TradeReportController {
         return ResponseEntity.ok(tradeReport);
     }
 
+    /** Newest reports first. limit defaults to 50 and is capped at 200. */
+    @GetMapping("/getReports")
+    public ResponseEntity<List<TradeReport>> getReports(@RequestParam(defaultValue = "50") int limit){
+        return ResponseEntity.ok(tradeReportService.getRecentReports(limit));
+    }
+
+    /** Audit history of one report, oldest version first. Audit rows are written by the Kafka consumer, so a new change may take about a second to appear. */
+    @GetMapping("/getReportAudits/{id}")
+    public ResponseEntity<List<AuditResponse>> getReportAudits(@PathVariable Long id){
+        List<AuditResponse> audits = tradeReportService.getReportAuditHistoryByReportId(id)
+                .stream()
+                .map(AuditResponse::from)
+                .toList();
+        return ResponseEntity.ok(audits);
+    }
+
     @GetMapping("/getReportRequestMapping")
     public ResponseEntity<TradeReport> getReportRequestMapping(@RequestParam Long id){
         TradeReport tradeReport = tradeReportService.getReport(id);
@@ -42,18 +59,18 @@ public class TradeReportController {
     }
 
     @PutMapping("/updateReport")
-    public ResponseEntity<UpdateResponse> updateReport(@Validated @RequestBody UpdateAmountAndFirm req) {
-        UpdateResponse updatedTradeReport = tradeReportService.updateAmountAndFirm(req);
+    public ResponseEntity<UpdateResponse> updateReport(@Validated @RequestBody UpdateAmount req) {
+        UpdateResponse updatedTradeReport = tradeReportService.updateAmount(req);
         return ResponseEntity.ok(updatedTradeReport);
     }
 
     @PutMapping("/updateReportBulk")
-    public ResponseEntity<List<UpdateResponse>> updateReportsBulk(@RequestBody List<@Valid UpdateAmountAndFirm> reqs){
+    public ResponseEntity<List<UpdateResponse>> updateReportsBulk(@RequestBody List<@Valid UpdateAmount> reqs){
 
         List<UpdateResponse> responses = new ArrayList<>();
 
-        for(UpdateAmountAndFirm report: reqs){
-            UpdateResponse response = tradeReportService.updateAmountAndFirm(report);
+        for(UpdateAmount report: reqs){
+            UpdateResponse response = tradeReportService.updateAmount(report);
             if (response != null) {
                 responses.add(response);
             } else {
