@@ -1,3 +1,4 @@
+<img width="1402" height="289" alt="logo" src="https://github.com/user-attachments/assets/6303b27d-a5d1-4bbd-969f-0c1251e20b93" />
 <p align="center">
   <img src="docs/images/dashboard.png" alt="TradeReport dashboard" width="900">
 </p>
