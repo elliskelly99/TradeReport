@@ -1,9 +1,10 @@
-<img width="1402" height="289" alt="logo" src="https://github.com/user-attachments/assets/6303b27d-a5d1-4bbd-969f-0c1251e20b93" />
 <p align="center">
   <img src="docs/images/dashboard.png" alt="TradeReport dashboard" width="900">
 </p>
 
 <h1 align="center">TradeReport</h1>
+<img width="1402" height="289" alt="logo" src="https://github.com/user-attachments/assets/6303b27d-a5d1-4bbd-969f-0c1251e20b93" />
+
 <p align="center"><b>Every change. Recorded forever.</b></p>
 <p align="center">
   A trade reporting service where nothing is lost, nothing is duplicated, and history can't be rewritten.
